@@ -1,6 +1,5 @@
 package com.brett.mp3lyrics;
 
-import java.io.File;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.Reader;
@@ -8,10 +7,6 @@ import java.net.URL;
 import java.net.URLConnection;
 
 import org.apache.commons.lang3.StringEscapeUtils;
-import org.jaudiotagger.audio.AudioFile;
-import org.jaudiotagger.audio.AudioFileIO;
-import org.jaudiotagger.tag.FieldKey;
-import org.jaudiotagger.tag.Tag;
 
 public class LyricsFetcher {
 
@@ -90,36 +85,4 @@ public class LyricsFetcher {
         return lyrics;
     }
 
-
-    public void updateFile(String fileName, String lyrics) {
-        File file = new File(fileName);
-        AudioFile f = null;
-        try {
-            f = AudioFileIO.read(file);
-            Tag tag = f.getTag();
-            tag.setField(FieldKey.LYRICS, lyrics);
-            AudioFileIO.write(f);
-        }
-        catch (Exception e) {
-            e.printStackTrace();
-        }
-    }
-
-
-    public void updateFile(String fileName, String artist, String title, String lyrics) {
-        File file = new File(fileName);
-        AudioFile f = null;
-        try {
-            f = AudioFileIO.read(file);
-            Tag tag = f.getTag();
-            tag.setField(FieldKey.LYRICS, lyrics);
-            tag.setField(FieldKey.ARTIST, artist);
-            tag.setField(FieldKey.TITLE, title);
-            AudioFileIO.write(f);
-        }
-        catch (Exception e) {
-            e.printStackTrace();
-        }
-    }
-    
 }

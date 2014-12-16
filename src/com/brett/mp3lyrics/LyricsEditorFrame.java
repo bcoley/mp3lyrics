@@ -24,7 +24,7 @@ import javax.swing.SwingConstants;
 import javax.swing.border.EmptyBorder;
 import javax.swing.border.EtchedBorder;
 
-import org.jaudiotagger.audio.mp3.MP3File;
+import org.apache.commons.lang3.StringUtils;
 import org.jaudiotagger.tag.FieldKey;
 import org.jaudiotagger.tag.Tag;
 
@@ -36,9 +36,13 @@ public class LyricsEditorFrame extends JFrame {
     private JTextField txtFilename;
     private JTextField txtArtist;
     private JTextField txtTitle;
+  
+    private JTextArea lyricsTextArea;
+    
     
     private LyricsFetcher lyricsFetcher = new LyricsFetcher();
-    private JTextArea lyricsTextArea;
+    private AudioFileUtils audioFileUtils = new AudioFileUtils();
+    
 
 
     /**
@@ -48,65 +52,14 @@ public class LyricsEditorFrame extends JFrame {
         setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
         setBounds(100, 100, 450, 300);
         
-        JMenuBar menuBar = new JMenuBar();
-        setJMenuBar(menuBar);
-        
-        JMenu mnFile = new JMenu("File");
-        menuBar.add(mnFile);
-        
-        JMenuItem mntmOpen = new JMenuItem("Open");
-        mntmOpen.addActionListener(new ActionListener() {
-            public void actionPerformed(ActionEvent arg0) {
-                JFileChooser fileChooser = new JFileChooser();
-                fileChooser.setCurrentDirectory(new File(System.getProperty("user.home")));
-                int result = fileChooser.showOpenDialog(null);
-                if (result == JFileChooser.APPROVE_OPTION) {
-                    File selectedFile = fileChooser.getSelectedFile();
-                    processFile(selectedFile.getAbsolutePath());
-                }
-            }
-        
-        });
-        mntmOpen.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_O, InputEvent.CTRL_MASK));
-        mnFile.add(mntmOpen);
-        
-        JMenuItem mntmSave = new JMenuItem("Save");
-        mntmSave.addActionListener(new ActionListener() {
-            public void actionPerformed(ActionEvent arg0) {
-                saveFile();
-            }
-        });
-        mntmSave.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_S, InputEvent.CTRL_MASK));
-        mnFile.add(mntmSave);
+        createMenu();
         
         contentPane = new JPanel();
         contentPane.setBorder(new EmptyBorder(5, 5, 5, 5));
         contentPane.setLayout(new BorderLayout(0, 0));
         setContentPane(contentPane);
         
-        JPanel buttonPanel = new JPanel();
-        buttonPanel.setBorder(new EtchedBorder(EtchedBorder.LOWERED, null, null));
-        contentPane.add(buttonPanel, BorderLayout.SOUTH);
-        
-        JButton btnNewButton_1 = new JButton("Get Lyrics");
-        btnNewButton_1.addActionListener(new ActionListener() {
-            public void actionPerformed(ActionEvent arg0) {
-               String lyrics = lyricsFetcher.fetchLyrics(txtArtist.getText(), txtTitle.getText());
-               lyricsTextArea.setText(lyrics);
-               
-            }
-        });
-        btnNewButton_1.setHorizontalAlignment(SwingConstants.LEFT);
-        buttonPanel.add(btnNewButton_1);
-        
-        JButton btnNewButton = new JButton("Save File");
-        btnNewButton.addActionListener(new ActionListener() {
-            public void actionPerformed(ActionEvent arg0) {
-                saveFile();
-            }
-        });
-        btnNewButton.setHorizontalAlignment(SwingConstants.RIGHT);
-        buttonPanel.add(btnNewButton);
+        createButtonPanel();
         
         JPanel dataPanel = new JPanel();
         dataPanel.setBorder(new EtchedBorder(EtchedBorder.LOWERED, null, null));
@@ -140,10 +93,69 @@ public class LyricsEditorFrame extends JFrame {
         
         lyricsTextArea = new JTextArea();
         scrollPane.setViewportView(lyricsTextArea);
-        processFile(fileName);
+        populateScreenData(fileName);
+    }
+
+    private void createButtonPanel() {
+        JPanel buttonPanel = new JPanel();
+        buttonPanel.setBorder(new EtchedBorder(EtchedBorder.LOWERED, null, null));
+        contentPane.add(buttonPanel, BorderLayout.SOUTH);
+        
+        JButton lyricsButton = new JButton("Get Lyrics");
+        lyricsButton.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent arg0) {
+               String lyrics = lyricsFetcher.fetchLyrics(txtArtist.getText(), txtTitle.getText());
+               lyricsTextArea.setText(lyrics);
+               
+            }
+        });
+        lyricsButton.setHorizontalAlignment(SwingConstants.LEFT);
+        buttonPanel.add(lyricsButton);
+        
+        JButton saveButton = new JButton("Save File");
+        saveButton.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent arg0) {
+                saveFile();
+            }
+        });
+        saveButton.setHorizontalAlignment(SwingConstants.RIGHT);
+        buttonPanel.add(saveButton);
+    }
+
+    private void createMenu() {
+        JMenuBar menuBar = new JMenuBar();
+        setJMenuBar(menuBar);
+        
+        JMenu mnFile = new JMenu("File");
+        menuBar.add(mnFile);
+        
+        JMenuItem mntmOpen = new JMenuItem("Open");
+        mntmOpen.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent arg0) {
+                JFileChooser fileChooser = new JFileChooser();
+                fileChooser.setCurrentDirectory(new File(System.getProperty("user.home")));
+                int result = fileChooser.showOpenDialog(null);
+                if (result == JFileChooser.APPROVE_OPTION) {
+                    File selectedFile = fileChooser.getSelectedFile();
+                    populateScreenData(selectedFile.getAbsolutePath());
+                }
+            }
+        
+        });
+        mntmOpen.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_O, InputEvent.CTRL_MASK));
+        mnFile.add(mntmOpen);
+        
+        JMenuItem mntmSave = new JMenuItem("Save");
+        mntmSave.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent arg0) {
+                saveFile();
+            }
+        });
+        mntmSave.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_S, InputEvent.CTRL_MASK));
+        mnFile.add(mntmSave);
     }
     
-    private String processFileName(String mp3FileName) {
+    private String extractFileName(String mp3FileName) {
         String result = null;
         String fileName = mp3FileName;
         // split off path info...
@@ -159,31 +171,37 @@ public class LyricsEditorFrame extends JFrame {
         return result;
     }
 
-    private void processFile(String filePath) {
+    private void populateScreenData(String filePath) {
         txtFilename.setText(filePath);
-        MP3File mp3File = readAudioFile(filePath);
-        Tag tag = mp3File.getTag();
-        String artist = tag.getFirst(FieldKey.ARTIST);
-        String title =  tag.getFirst(FieldKey.TITLE);
-        String existingLyrics = tag.getFirst(FieldKey.LYRICS);
+        Tag tag = audioFileUtils.getTag(filePath);
         
-        String fileName = processFileName(filePath);
+        String artist = "";
+        String title =  "";
+        String existingLyrics = "";
         
-        if (isEmpty(artist)) {
+        if (tag != null) {
+            artist = tag.getFirst(FieldKey.ARTIST);
+            title =  tag.getFirst(FieldKey.TITLE);
+            existingLyrics = tag.getFirst(FieldKey.LYRICS);
+        }
+        
+        String fileName = extractFileName(filePath);
+        
+        if (StringUtils.isBlank(artist)) {
             txtArtist.setText(fileName);
         }
         else {
             txtArtist.setText(artist);
         }
         
-        if (isEmpty(title)) {
+        if (StringUtils.isBlank(title)) {
             txtTitle.setText(fileName);
         }
         else {
             txtTitle.setText(title);
         }
         
-        if (isEmpty(existingLyrics)) {
+        if (StringUtils.isBlank(existingLyrics)) {
             lyricsTextArea.setText("");
         }
         else {
@@ -191,32 +209,10 @@ public class LyricsEditorFrame extends JFrame {
         }
     }
     
-    
-    private boolean isEmpty(String str) {
-        if (null == str) {
-            return true;
-        }
-        if (str.length() == 0) {
-            return true;
-        }
-        return str.isEmpty();
-    }
-    
-    private MP3File readAudioFile(String fileName) {
-        File testFile = new File(fileName);
-
-        MP3File mp3File = null;
-        try {
-            mp3File = new MP3File(testFile);
-        }
-        catch (Exception e) {
-            e.printStackTrace();
-        }
-        return mp3File;
-    }
+       
     
     private void saveFile() {
-        lyricsFetcher.updateFile(txtFilename.getText(), txtArtist.getText(), txtTitle.getText(), lyricsTextArea.getText());
+        audioFileUtils.updateFile(txtFilename.getText(), txtArtist.getText(), txtTitle.getText(), lyricsTextArea.getText());
     }
 
 }

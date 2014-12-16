@@ -4,9 +4,13 @@ import java.io.File;
 
 import javax.swing.table.AbstractTableModel;
 
+import org.apache.commons.lang3.StringUtils;
+
 public class Mp3LyricsTableModel extends AbstractTableModel {
 
     private static final long serialVersionUID = 620340418889524722L;
+    
+    private AudioFileUtils audioFileUtils = new AudioFileUtils();
 
     public Mp3LyricsTableModel() {
     }
@@ -37,8 +41,13 @@ public class Mp3LyricsTableModel extends AbstractTableModel {
                 return files[row].getName();
             }
             else if (col == 0) {
-                //TODO: Y or N if file has existing lyrics
-                return "?";
+                String lyrics = audioFileUtils.getLyrics(files[row].getAbsolutePath());
+                if (StringUtils.isNotBlank(lyrics)) {
+                    return "y";
+                }
+                else {
+                    return "n";
+                }
             }
             else {
                 return null;
@@ -59,10 +68,10 @@ public class Mp3LyricsTableModel extends AbstractTableModel {
 
     public String getColumnName(int col) {
         if (col == 0) {
-            return "lyrics";
+            return "Lyrics?";
         }
         else if (col == 1) {
-            return "file name";
+            return "File name";
         }
         else {
             return null;
