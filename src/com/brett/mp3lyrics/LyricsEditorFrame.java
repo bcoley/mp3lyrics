@@ -50,7 +50,7 @@ public class LyricsEditorFrame extends JFrame {
      */
     public LyricsEditorFrame(final String fileName) {
         setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
-        setBounds(100, 100, 450, 300);
+        setBounds(100, 100, 460, 520);
         
         createMenu();
         
